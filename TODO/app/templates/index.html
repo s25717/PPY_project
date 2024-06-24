@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Todo List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 500px;
+            text-align: center;
+        }
+        .container h1 {
+            margin-bottom: 20px;
+        }
+        .task-input {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .task-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+        }
+        .task-input button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #6c63ff;
+            color: #fff;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .task-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .task-list li:last-child {
+            margin-bottom: 0;
+        }
+        .task-list .task-text {
+            flex: 1;
+        }
+        .task-list button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .task-list .edit-btn {
+            background-color: #6c63ff;
+            color: #fff;
+        }
+        .task-list .delete-btn {
+            background-color: #ff6b6b;
+            color: #fff;
+        }
+        .description, .deadline {
+            display: none;
+        }
+        .description.show, .deadline.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TO DO List</h1>
+        <form class="task-input" action="{{ url_for('add_todo_form') }}" method="post">
+            <input type="text" name="task" placeholder="Enter a task" required>
+            <button type="submit">Add Task</button>
+        </form>
+        <ul class="task-list">
+            {% for todo in todos %}
+                <li>
+                    <form action="{{ url_for('edit_todo_form', todo_id=todo['_id']) }}" method="post" style="flex: 1; display: flex; align-items: center;">
+                        <input type="text" name="task" value="{{ todo.task }}" class="task-text" style="flex: 1; margin-right: 10px;">
+                        <input type="checkbox" name="done" {% if todo.done %}checked{% endif %} onchange="this.form.submit()" style="margin-right: 10px;">
+                        <button type="button" class="edit-btn" onclick="toggleDescription('{{ todo['_id'] }}')">Description</button>
+                        <div id="desc-{{ todo['_id'] }}" class="description">
+                            <textarea name="description">{{ todo.description }}</textarea>
+                            <button type="submit">Save</button>
+                        </div>
+                        <button type="button" class="edit-btn" onclick="toggleDeadline('{{ todo['_id'] }}')">Deadline</button>
+                        <div id="deadline-{{ todo['_id'] }}" class="deadline">
+                            <input type="datetime-local" name="deadline" value="{{ todo.deadline }}">
+                            <button type="submit">Save</button>
+                            <div id="countdown-{{ todo['_id'] }}"></div>
+                        </div>
+                    </form>
+                    <form action="{{ url_for('delete_todo_form', todo_id=todo['_id']) }}" method="post">
+                        <button type="submit" class="delete-btn">Delete</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <script>
+        function toggleDescription(id) {
+            var desc = document.getElementById('desc-' + id);
+            if (desc.classList.contains('show')) {
+                desc.classList.remove('show');
+            } else {
+                desc.classList.add('show');
+            }
+        }
+
+        function toggleDeadline(id) {
+            var deadline = document.getElementById('deadline-' + id);
+            if (deadline.classList.contains('show')) {
+                deadline.classList.remove('show');
+            } else {
+                deadline.classList.add('show');
+                startCountdown(id);
+            }
+        }
+
+        function startCountdown(id) {
+            var countdown = document.getElementById('countdown-' + id);
+            var deadlineInput = document.querySelector('#deadline-' + id + ' input[name="deadline"]');
+            var deadline = new Date(deadlineInput.value);
+
+            function updateCountdown() {
+                var now = new Date();
+                var diff = deadline - now;
+
+                if (diff > 0) {
+                    var hours = Math.floor(diff / 1000 / 60 / 60);
+                    var minutes = Math.floor(diff / 1000 / 60) % 60;
+                    var seconds = Math.floor(diff / 1000) % 60;
+                    countdown.textContent = `Time left: ${hours}h ${minutes}m ${seconds}s`;
+                } else {
+                    countdown.textContent = "Deadline passed!";
+                }
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+    </script>
+</body>
+</html>
